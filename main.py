@@ -6,16 +6,15 @@ import logging
 import os
 import re
 import tempfile
-import threading
 import time
 import traceback
+import asyncio
 from io import BytesIO
 
 import psutil
-import pyrogram
 import yt_dlp
-from pyrogram import Client, enums, filters, idle, types
-from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
+from pyrogram import Client, enums, filters, types
+from pyrogram.errors import FloodWait
 from youtubesearchpython import VideosSearch
 
 from config import APP_HASH, APP_ID, OWNER, TOKEN
@@ -38,14 +37,14 @@ botStartTime = time.time()
 
 # Helper functions
 def sizeof_fmt(num: int, suffix='B'):
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+    for unit in ['', 'Ки', 'Ми', 'Ги', 'Ти', 'Пи', 'Эи', 'Зи']:
         if abs(num) < 1024.0:
             return '%3.1f%s%s' % (num, unit, suffix)
         num /= 1024.0
-    return '%.1f%s%s' % (num, 'Yi', suffix)
+    return '%.1f%s%s' % (num, 'Йи', suffix)
 
 def timeof_fmt(seconds: int):
-    periods = [('d', 86400), ('h', 3600), ('m', 60), ('s', 1)]
+    periods = [('д', 86400), ('ч', 3600), ('м', 60), ('с', 1)]
     result = ''
     for period_name, period_seconds in periods:
         if seconds >= period_seconds:
@@ -56,8 +55,9 @@ def timeof_fmt(seconds: int):
 def link_checker(url: str) -> str:
     ytdl = yt_dlp.YoutubeDL()
     with contextlib.suppress(yt_dlp.utils.DownloadError):
-        if ytdl.extract_info(url, download=False).get('live_status') == 'is_live':
-            return 'Live stream links are not supported.'
+        info = ytdl.extract_info(url, download=False)
+        if info.get('live_status') == 'is_live':
+            return 'Ссылки на прямые трансляции не поддерживаются.'
     return ''
 
 def search_ytb(kw: str):
@@ -73,81 +73,107 @@ def search_ytb(kw: str):
 
 # Command handlers
 @app.on_message(filters.command(['start']))
-def start_handler(client: Client, message: types.Message):
+async def start_handler(client: Client, message: types.Message):
     text = (
-        'Hello! I am a YouTube Download Bot.\n\n'
-        'Send me a YouTube link, and I will download the video for you.'
+        'Привет! Я бот для загрузки видео с YouTube.\n\n'
+        'Отправьте мне ссылку на видео YouTube, и я скачаю его для вас.'
     )
-    client.send_message(message.chat.id, text, disable_web_page_preview=True)
+    await client.send_message(message.chat.id, text, disable_web_page_preview=True)
 
 @app.on_message(filters.command(['help']))
-def help_handler(client: Client, message: types.Message):
+async def help_handler(client: Client, message: types.Message):
     text = (
-        'To use this bot, simply send a YouTube video link.\n'
-        'I will download the video and send it back to you.\n\n'
-        'Commands:\n'
-        '/start - Start the bot\n'
-        '/help - Show this help message\n'
-        '/stats - Show bot statistics'
+        'Чтобы использовать этого бота, просто отправьте ссылку на видео YouTube.\n'
+        'Я скачаю видео и отправлю его вам.\n\n'
+        'Команды:\n'
+        '/start - Запустить бота\n'
+        '/help - Показать это сообщение помощи\n'
+        '/stats - Показать статистику бота'
     )
-    client.send_message(message.chat.id, text, disable_web_page_preview=True)
+    await client.send_message(message.chat.id, text, disable_web_page_preview=True)
 
 @app.on_message(filters.command(['stats']))
-def stats_handler(client: Client, message: types.Message):
-    chat_id = message.chat.id
+async def stats_handler(client: Client, message: types.Message):
     cpu_usage = psutil.cpu_percent()
     memory = psutil.virtual_memory()
     bot_uptime = timeof_fmt(time.time() - botStartTime)
     text = (
-        f'**Bot Statistics:**\n'
-        f'CPU Usage: {cpu_usage}%\n'
-        f'Memory Usage: {memory.percent}%\n'
-        f'Bot Uptime: {bot_uptime}'
+        f'**Статистика бота:**\n'
+        f'Использование CPU: {cpu_usage}%\n'
+        f'Использование памяти: {memory.percent}%\n'
+        f'Время работы бота: {bot_uptime}'
     )
-    client.send_message(chat_id, text)
+    await client.send_message(message.chat.id, text)
 
-# Main download handler
+# YouTube link handler with regex
+YOUTUBE_REGEX = r'(https?://)?(www\.)?(youtube\.com|youtu\.be)/[^\s]+'
+
+@app.on_message(filters.regex(YOUTUBE_REGEX))
+async def youtube_link_handler(client: Client, message: types.Message):
+    url = re.search(YOUTUBE_REGEX, message.text).group(0).strip()
+
+    if text := link_checker(url):
+        await message.reply_text(text, quote=True)
+        return
+
+    bot_msg = await message.reply_text('Обрабатываю ваш запрос...', quote=True)
+    await ytdl_download_entrance(client, bot_msg, url)
+
+# Text handler to download video for personal messages
 @app.on_message(filters.private & filters.text)
-def download_handler(client: Client, message: types.Message):
-    chat_id = message.chat.id
+async def download_handler(client: Client, message: types.Message):
     url = message.text.strip()
 
     if not re.match(r'^https?://', url.lower()):
         text = search_ytb(url)
-        message.reply_text(text, quote=True, disable_web_page_preview=True)
+        await message.reply_text(text, quote=True, disable_web_page_preview=True)
         return
 
     if text := link_checker(url):
-        message.reply_text(text, quote=True)
+        await message.reply_text(text, quote=True)
         return
 
-    bot_msg = message.reply_text('Processing your request...', quote=True)
-    ytdl_download_entrance(client, bot_msg, url)
+    bot_msg = await message.reply_text('Обрабатываю ваш запрос...', quote=True)
+    await ytdl_download_entrance(client, bot_msg, url)
 
-
-def ytdl_download_entrance(client: Client, bot_msg: types.Message, url: str):
+# Main download function with error handling
+async def ytdl_download_entrance(client: Client, bot_msg: types.Message, url: str):
     try:
-        ytdl_normal_download(client, bot_msg, url)
+        await ytdl_normal_download(client, bot_msg, url)
+    except FloodWait as e:
+        await asyncio.sleep(e.value)  # Wait the required time silently
+        await ytdl_normal_download(client, bot_msg, url)  # Retry download
     except Exception as e:
-        logging.error('Failed to download %s, error: %s', url, e)
+        logging.error('Не удалось скачать %s, ошибка: %s', url, e)
         error_msg = traceback.format_exc()
-        bot_msg.edit_text(f'Download failed!❌\n\n`{error_msg}`', disable_web_page_preview=True)
+        await bot_msg.edit_text(f'Ошибка при загрузке!❌\n\n`{error_msg}`', disable_web_page_preview=True)
 
-def ytdl_normal_download(client: Client, bot_msg: types.Message, url: str):
+# Download video and send to chat
+async def ytdl_normal_download(client: Client, bot_msg: types.Message, url: str):
     chat_id = bot_msg.chat.id
     with tempfile.TemporaryDirectory(prefix='ytdl-') as temp_dir:
         video_paths = ytdl_download(url, temp_dir, bot_msg)
-        logging.info('Download complete.')
-        client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
-        bot_msg.edit_text('Download complete. Sending now...')
+        logging.info('Загрузка завершена.')
+        await client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
+        await bot_msg.edit_text('Загрузка завершена. Отправляю видео...')
+        
         for video_path in video_paths:
-            client.send_video(
-                chat_id,
-                video=video_path,
-                caption='Here is your video.',
-                supports_streaming=True,
-            )
-        bot_msg.edit_text('Download success!✅')
+            sent = False
+            while not sent:
+                try:
+                    await client.send_video(
+                        chat_id,
+                        video=video_path,
+                        caption='Вот ваше видео.',
+                        supports_streaming=True,
+                    )
+                    sent = True  # Break loop if successful
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)  # Wait silently
+                except Exception as e:
+                    logging.error('Не удалось отправить видео, ошибка: %s', e)
+                    sent = True  # Stop retrying on non-FloodWait errors
+        await bot_msg.edit_text('Видео успешно отправлено!✅')
 
 if __name__ == '__main__':
     app.run()
