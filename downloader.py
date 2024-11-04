@@ -2,13 +2,8 @@
 # coding: utf-8
 
 from io import StringIO
-import logging
-import os
 import pathlib
-import re
-import tempfile
 
-import ffmpeg
 import yt_dlp as ytdl
 from pyrogram import types
 from tqdm import tqdm
