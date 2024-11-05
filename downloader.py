@@ -1,66 +1,35 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-from io import StringIO
 import pathlib
+import yt_dlp
+import logging
 
-import yt_dlp as ytdl
-from pyrogram import types
-from tqdm import tqdm
+def ytdl_download(url: str, save_dir: str, bot_msg):
+    """
+    downloads a youtube video and saves it in the specified directory.
 
-# Helper functions
-def sizeof_fmt(num: int, suffix='B'):
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(num) < 1024.0:
-            return '%3.1f%s%s' % (num, unit, suffix)
-        num /= 1024.0
-    return '%.1f%s%s' % (num, 'Yi', suffix)
-
-def edit_text(bot_msg: types.Message, text: str):
-    bot_msg.edit_text(text)
-
-def tqdm_progress(desc, total, finished):
-    from io import StringIO
-    from tqdm import tqdm
-
-    f = StringIO()
-    with tqdm(
-        total=total,
-        initial=finished,
-        file=f,
-        ascii=False,
-        ncols=30,
-        bar_format='{l_bar}{bar} |{n_fmt}/{total_fmt} \r {percentage:.0f}%',
-        unit_scale=False,
-    ) as t:
-        pass
-
-    raw_output = f.getvalue()
-    tqdm_output = raw_output.split('|')
-    progress = f'`[{tqdm_output[1]}]`'
-    detail = tqdm_output[2].strip()
-    text = f'''
-{desc}
-
-{progress}
-{detail}
-    '''
-    f.close()
-    return text
-
-def ytdl_download(url: str, tempdir: str, bot_msg):
-    output = pathlib.Path(tempdir, '%(title).70s.%(ext)s').as_posix()
+    :param url: youtube video url
+    :param save_dir: path to the directory for saving the video
+    :param bot_msg: bot message for updating status (if necessary)
+    :return: list of paths to the downloaded video files
+    """
+    output_template = pathlib.Path(save_dir) / '%(title).70s.%(ext)s'
     ydl_opts = {
-        'outtmpl': output,
+        'outtmpl': str(output_template),
         'format': 'best',
         'quiet': True,
+        'no_warnings': True,
+        'ignoreerrors': True,
+        # add progress hook if necessary
+        # 'progress_hooks': [my_hook],
     }
 
     try:
-        with ytdl.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-        video_paths = list(pathlib.Path(tempdir).glob('*'))
+        video_paths = list(pathlib.Path(save_dir).glob('*'))
+        return video_paths
     except Exception as e:
+        logging.error(f"error downloading video: {e}")
         raise e
-
-    return video_paths

@@ -1,4 +1,5 @@
-# test_downloader.py
+#!/usr/bin/env python3
+# coding: utf-8
 
 import unittest
 from unittest.mock import patch, MagicMock
@@ -12,7 +13,7 @@ from downloader import sizeof_fmt, edit_text, tqdm_progress, ytdl_download
 class TestDownloader(unittest.TestCase):
 
     def test_sizeof_fmt(self):
-        # Тестирование корректного форматирования размера файлов
+        # test correct formatting of file sizes
         self.assertEqual(sizeof_fmt(0), '0.0B')
         self.assertEqual(sizeof_fmt(1023), '1023.0B')
         self.assertEqual(sizeof_fmt(1024), '1.0KiB')
@@ -21,15 +22,15 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(sizeof_fmt(1024 ** 4), '1.0TiB')
 
     def test_edit_text(self):
-        # Мокаем объект сообщения
+        # mock the message object
         bot_msg = MagicMock(spec=types.Message)
-        text = "Тестовое сообщение"
+        text = "test message"
         edit_text(bot_msg, text)
         bot_msg.edit_text.assert_called_once_with(text)
 
     def test_tqdm_progress(self):
-        # Тестирование генерации текста прогресса
-        desc = "Скачивание"
+        # test progress text generation
+        desc = "downloading"
         total = 100
         finished = 50
         result = tqdm_progress(desc, total, finished)
@@ -43,14 +44,14 @@ class TestDownloader(unittest.TestCase):
         video_paths = ytdl_download(url, tempdir, bot_msg)
         self.assertIsInstance(video_paths, list)
         self.assertTrue(len(video_paths) > 0)
-        # Проверяем, что файлы существуют
+        # check that files exist
         for video_path in video_paths:
             self.assertTrue(os.path.exists(video_path))
-        # Выводим путь к видеофайлу
-        print(f"Видео сохранено в: {video_paths[0]}")
-        # Теперь временная директория не будет удалена автоматически
-        # Вы можете удалить ее вручную после просмотра содержимого
-        # Если хотите, можете раскомментировать следующую строку для удаления
+        # print the path to the video file
+        print(f"video saved at: {video_paths[0]}")
+        # the temporary directory will not be deleted automatically
+        # you can delete it manually after inspecting the contents
+        # if desired, uncomment the following line to delete
         # shutil.rmtree(tempdir)
 
 if __name__ == '__main__':

@@ -7,6 +7,10 @@ __pycache__/
 # C extensions
 *.so
 
+#Session files
+*.session
+*.session-journal
+
 # Test caches and reports
 .pytest_cache/
 .cache/
@@ -73,5 +77,6 @@ coverage/
 # Ignore specific files and directories in your project
 CACHEDIR.TAG
 
-# Config file
+# Config file and temple file
 config.py
+.temple_files/
