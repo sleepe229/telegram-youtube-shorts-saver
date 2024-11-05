@@ -5,6 +5,8 @@ import contextlib
 import logging
 import os
 import re
+import shutil
+import tempfile
 import time
 import traceback
 import threading  # adding the threading module
@@ -191,36 +193,37 @@ async def download_handler(client: Client, message: types.Message):
     bot_msg = await message.reply_text('', quote=True)
     await ytdl_download_entrance(client, bot_msg, url)
 
-# main download function with error handling
+# main download function with error handling and isolated download directory
 async def ytdl_download_entrance(client: Client, bot_msg: types.Message, url: str, retries=3):
+    temp_dir = tempfile.mkdtemp(dir=TEMPLE_FILES_DIR)  # Создаем уникальную временную папку для каждого запроса
     try:
-        await ytdl_normal_download(client, bot_msg, url)
+        await ytdl_normal_download(client, bot_msg, url, temp_dir)
     except FloodWait as e:
         if retries > 0:
             logging.warning(f"FloodWait: waiting for {e.value} seconds. Attempts left: {retries}")
-            time.sleep(e.value + 1)  # wait the required time plus 1 second
-            await ytdl_download_entrance(client, bot_msg, url, retries - 1)  # retry download
+            time.sleep(e.value + 1)
+            await ytdl_download_entrance(client, bot_msg, url, retries - 1)
         else:
             await safe_edit_message(bot_msg, 'Too many requests. Please try again later.')
     except Exception as e:
         logging.error('Failed to download %s, error: %s', url, e)
         error_msg = traceback.format_exc()
         await safe_edit_message(bot_msg, f'Error during download!❌\n\n`{error_msg}`', disable_web_page_preview=True)
+    finally:
+        shutil.rmtree(temp_dir)  # Удаляем временную папку после завершения обработки
 
-# download video and send to chat
-async def ytdl_normal_download(client: Client, bot_msg: types.Message, url: str):
+# download video and send to chat with isolated directory
+async def ytdl_normal_download(client: Client, bot_msg: types.Message, url: str, temp_dir: str):
     chat_id = bot_msg.chat.id
-    video_paths = ytdl_download(url, TEMPLE_FILES_DIR, bot_msg)
+    video_paths = ytdl_download(url, temp_dir, bot_msg)  
     logging.info('Download completed.')
-    
-    # send "uploading video" action
+
     await client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
-    
+
     for video_path in video_paths:
         sent = False
         while not sent:
             try:
-                # send the video as a new message
                 await client.send_video(
                     chat_id,
                     video=video_path,
@@ -230,11 +233,11 @@ async def ytdl_normal_download(client: Client, bot_msg: types.Message, url: str)
                 sent = True  # exit loop if successful
             except FloodWait as e:
                 logging.warning(f"FloodWait: waiting for {e.value} seconds.")
-                time.sleep(e.value + 1)  # wait the required time plus 1 second
+                time.sleep(e.value + 1)
             except Exception as e:
                 logging.error('Failed to send video, error: %s', e)
-                sent = True  # stop retrying on non-FloodWait errors
-    
+                sent = True
+
     # delete the message "Starting video download..."
     await bot_msg.delete()
     
