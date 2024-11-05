@@ -1,0 +1,87 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Session files
+*.session
+*.session-journal
+
+# Test caches and reports
+.pytest_cache/
+*.log
+.cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Environment variables and dependency managers
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VS Code settings and workspace files
+.vscode/
+*.code-workspace
+
+# macOS and Windows artifacts
+.DS_Store
+Thumbs.db
+
+# Python packaging files
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+
+# Build and distribution directories
+build/
+dist/
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+coverage/
+
+# Caches and virtual environment
+*.tmp
+*.swp
+*.mypy_cache
+*.pytest_cache
+*.pylint.d
+
+# Tags and temporary files
+*~
+*.bak
+
+# Ignore specific files and directories in your project
+CACHEDIR.TAG
+
+# Config files and directories
+config.py
+temple_files/
+bot.log
+*.mp4
+*.avi 
+*.mov 
+*.mkv 
+*.flv 
+*.wmv
