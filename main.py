@@ -5,7 +5,6 @@ import contextlib
 import logging
 import os
 import re
-import tempfile
 import time
 import traceback
 import asyncio

@@ -79,4 +79,4 @@ CACHEDIR.TAG
 
 # Config file and temple file
 config.py
-.temple_files/
+temple_files/
