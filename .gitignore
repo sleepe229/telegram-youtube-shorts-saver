@@ -1,0 +1,28 @@
+# Файлы Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.py[cod]
+
+# Логи
+*.log
+.pytest_cache/
+
+# Папки виртуальных окружений
+.venv/
+venv/
+
+# Конфигурации и временные файлы IDE
+.vscode/
+*.code-workspace
+.env
+
+# Конфигурационные файлы и каталоги
+config.py
+test_downloader.py
+temple_files/
+*.session
+*.session-journal
+CACHEDIR.TAG
