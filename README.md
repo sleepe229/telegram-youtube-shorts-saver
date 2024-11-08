@@ -16,8 +16,8 @@ This bot is designed for downloading YouTube videos, with enhanced error handlin
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/YouTubeVideoDownloadBot.git
-    cd YouTubeVideoDownloadBot
+    https://github.com/sleepe229/telegram-youtube-shorts-saver.git
+    cd telegram-youtube-shorts-saver
     ```
 
 2. Install the required Python packages:
