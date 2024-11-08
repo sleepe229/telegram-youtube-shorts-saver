@@ -20,7 +20,6 @@ venv/
 .env
 
 # Конфигурационные файлы и каталоги
-config.py
 test_downloader.py
 temple_files/
 *.session

@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  cringe_bot:
+    build: .
+    container_name: cringe_bot_container
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - ./temple_files:/app/temple_files
