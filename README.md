@@ -35,38 +35,25 @@ Create a .env file in the root directory of the project and add your Telegram AP
 
 **Important**: Ensure that the .env file is added to .gitignore to prevent sensitive information from being pushed to version control.
 
-### 3. Using Docker (Recommended)
+3. Using Docker (Recommended)
 
 #### a. Build and Run the Docker Container
-    ```bash
     docker-compose up -d --build
-    ```
-
 #### b. Verify the Container is Running
-    ```bash
     docker-compose ps
-    ```
 #### c. View Logs
-    ```bash
     docker-compose logs -f cringe_bot_container
-    ```
 
 4. Local Setup (Without Docker)
 #### a. Create a Virtual Environment
-    ```bash
     python3 -m venv venv
     source venv/bin/activate # On Linux
     venv\Scripts\activate # On Windows 
-    ```
 #### b. Verify the Container is Running
-    ```bash
     pip install --upgrade pip
     pip install -r requirements.txt
-    ```
 #### c. Run the bot
-    ```bash
     python main.py
-    ```
 
 ## Commands
 - `/start` - Start the bot and receive a welcome message.
