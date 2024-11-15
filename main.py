@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import asyncio
 import contextlib
 import logging
 import os
@@ -89,18 +90,22 @@ def search_ytb(kw: str):
 
 # safe edit message function
 async def safe_edit_message(bot_msg: types.Message, new_text: str, **kwargs):
-    if bot_msg.text != new_text:
-        try:
-            await bot_msg.edit_text(new_text, **kwargs)
-        except MessageNotModified:
-            pass  # the message already contains this text
-        except FloodWait as e:
-            logging.warning(f"FloodWait: waiting for {e.value} seconds.")
-            time.sleep(e.value + 1)  # wait the required time plus 1 second
-            await safe_edit_message(bot_msg, new_text, **kwargs)  # try again
-        except Exception as e:
-            logging.error(f"Error editing message: {e}")
-
+    max_retries = 3
+    retries = 0
+    while retries < max_retries:
+        if bot_msg.text != new_text:
+            try:
+                await bot_msg.edit_text(new_text, **kwargs)
+                return 
+            except MessageNotModified:
+                pass 
+            except FloodWait as e:
+                logging.warning(f"FloodWait: waiting for {e.value} seconds. Attempts left: {max_retries - retries}.")
+                await asyncio.sleep(e.value + 1)
+                retries += 1
+            except Exception as e:
+                logging.error(f"Error editing message: {e}")
+                break
 # monitoring function
 def monitor(directory=TEMPLE_FILES_DIR, max_videos=15, check_interval=60):
     """
