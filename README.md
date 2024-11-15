@@ -1,16 +1,20 @@
 # YouTube Video Download Bot
 
-This bot is designed for downloading YouTube videos, with enhanced error handling and silent retry capabilities in case of network limitations or rate limits. Built with Pyrogram, it leverages `yt_dlp` for downloading and `youtubesearchpython` for search functionality.
+This bot is designed for downloading YouTube videos, with enhanced error handling and silent retry capabilities in case of network limitations or rate limits. Built with Pyrogram, it leverages `yt-dlp` for downloading and `youtubesearchpython` for search functionality. Additionally, the bot is containerized using Docker for easy deployment and scalability.
 
 ## Features
-- Download videos directly from YouTube.
-- Search YouTube videos with a text query.
-- Automatically retries failed downloads silently, ensuring uninterrupted service.
-- Provides bot usage statistics, including CPU and memory usage.
+- **Download Videos:** Download videos directly from YouTube by sending a YouTube link.
+- **Automatic Retries:** Automatically retries failed downloads silently, ensuring uninterrupted service.
+- **System Statistics:** Provides bot usage statistics, including CPU and memory usage.
+- **Dockerized Deployment:** Easily deploy the bot using Docker and Docker Compose.
 
 ## Requirements
-- Python 3.8+
-- Telegram API credentials (API ID, API Hash, Bot Token)
+- **Python 3.11**
+- **Docker & Docker Compose** (for containerized deployment)
+- **Telegram API Credentials:**
+  - API ID
+  - API Hash
+  - Bot Token
 
 ## Installation
 
@@ -20,22 +24,36 @@ This bot is designed for downloading YouTube videos, with enhanced error handlin
     cd telegram-youtube-shorts-saver
     ```
 
-2. Install the required Python packages:
+2. Setup Environment Variables
+Create a .env file in the root directory of the project and add your Telegram API credentials
     ```bash
+    APP_ID=your_app_id
+    APP_HASH=your_app_hash
+    TOKEN=your_bot_token
+    OWNER=your_owner_id
+    ```
+
+**Important**: Ensure that the .env file is added to .gitignore to prevent sensitive information from being pushed to version control.
+
+3. Using Docker (Recommended)
+
+#### a. Build and Run the Docker Container
+    docker-compose up -d --build
+#### b. Verify the Container is Running
+    docker-compose ps
+#### c. View Logs
+    docker-compose logs -f cringe_bot_container
+
+4. Local Setup (Without Docker)
+#### a. Create a Virtual Environment
+    python3 -m venv venv
+    source venv/bin/activate # On Linux
+    venv\Scripts\activate # On Windows 
+#### b. Verify the Container is Running
+    pip install --upgrade pip
     pip install -r requirements.txt
-    ```
-
-3. Configure your environment variables in `config.py`:
-    ```python
-    APP_ID = 'your_app_id'
-    APP_HASH = 'your_app_hash'
-    TOKEN = 'your_bot_token'
-    ```
-
-4. Run the bot:
-    ```bash
+#### c. Run the bot
     python main.py
-    ```
 
 ## Commands
 - `/start` - Start the bot and receive a welcome message.
@@ -44,10 +62,3 @@ This bot is designed for downloading YouTube videos, with enhanced error handlin
 
 ## Usage
 - Send a YouTube link to download the video.
-- Send a text query to search for top 5 YouTube videos and receive the links.
-- The bot automatically handles links with live streaming status and sends appropriate feedback.
-
-## Testing
-Run the tests to ensure the download and utility functions work correctly:
-```bash
-python -m unittest discover

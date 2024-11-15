@@ -1,6 +1,6 @@
-psutil==5.9.0
-yt-dlp==2023.03.04
-pyrogram==2.0.106
-youtubesearchpython==1.6.6
-tqdm==4.64.0
-ffmpeg-python==0.2.0
+psutil==6.1.0
+yt-dlp==2024.11.4
+Pyrogram==2.0.106
+youtube-search-python==1.6.6
+python-socks==2.4.3
+TgCrypto==1.2.5
